@@ -19,9 +19,6 @@ toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.att
 # Population initializer
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
-# population = toolbox.population(n=50)  # Example: create a population of 50 individuals
-#
-# best_individuals = tools.selBest(population, k=5)
 
 # Define the evaluation function
 def evaluate(individual):
