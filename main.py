@@ -2,11 +2,19 @@ import random
 from deap import base, creator, tools
 
 # Global variables
-CHROMOSOME_LENGHT = 130
+CHROMOSOME_LENGHT = 31
 INITIAL_POPULATION = 1000
 NUM_OF_GENERATIONS = 100
 CROSSOVER_PROBABILITY = 0.5
 MUTATION_PROBABILITY = 0.2
+
+restricted_positions = {
+    1: [12, 13, 14, 15, 26, 27, 28, 29, 30],
+    2: [6, 7, 8, 9, 26, 27, 28, 29],
+    3: [0, 1, 2, 3, 4, 5, 6, 18, 19, 20, 21, 26, 27, 28, 29],
+    4: [15, 16, 17, 18, 19, 20],
+    5: [1, 2, 3, 4, 5, 6, 20, 21, 22, 23, 24, 25, 26, 27]
+}
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMax)
@@ -21,12 +29,23 @@ toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
 # Define the evaluation function
+current_score = 0
+total_score = 0
+prev_value = None
+penalty = 0  # Initialize penalty for placing numbers in restricted positions
+
+
 def evaluate(individual):
     current_score = 0
     total_score = 0
     prev_value = None
+    penalty = 0  # Initialize penalty for placing numbers in restricted positions
 
-    for value in individual:
+    for index, value in enumerate(individual):
+        # Check if the current value is placed in a restricted position
+        if index in restricted_positions.get(value, []):
+            penalty += 1  # Increase penalty for restricted placement
+
         if value == prev_value:
             # If the current value is the same as the previous, increment the score
             current_score += 1
@@ -39,7 +58,10 @@ def evaluate(individual):
     # Add the last sequence score to total_score
     total_score += current_score
 
-    return (total_score,)
+    # Adjust the total score by the penalty. Ensure the final score is not negative
+    final_score = max(0, total_score - penalty)
+
+    return (final_score,)
 
 
 # Register the evaluation function
