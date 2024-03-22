@@ -3,8 +3,8 @@ from deap import base, creator, tools
 
 # Global variables
 CHROMOSOME_LENGHT = 31
-INITIAL_POPULATION = 1000
-NUM_OF_GENERATIONS = 100
+INITIAL_POPULATION = 5000
+NUM_OF_GENERATIONS = 300
 CROSSOVER_PROBABILITY = 0.5
 MUTATION_PROBABILITY = 0.2
 
@@ -26,13 +26,6 @@ toolbox.register("attr_int", random.randint, 1, 5)
 toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_int, CHROMOSOME_LENGHT)
 # Population initializer
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-
-
-# Define the evaluation function
-current_score = 0
-total_score = 0
-prev_value = None
-penalty = 0  # Initialize penalty for placing numbers in restricted positions
 
 
 def evaluate(individual):
@@ -73,11 +66,18 @@ toolbox.register("mate", tools.cxOnePoint)  # For one-point crossover
 toolbox.register("mate", tools.cxTwoPoint)  # For two-point crossover
 toolbox.register("mate", tools.cxUniform, indpb=0.1)  # For uniform crossover, with a swapping probability of 10%
 
-toolbox.register("mutate", tools.mutUniformInt, low=0, up=5, indpb=0.05)
+toolbox.register("mutate", tools.mutUniformInt, low=1, up=5, indpb=0.05)
 
-# Example genetic algorithm loop
-def main():
-    population = toolbox.population(n=INITIAL_POPULATION)  # Initialize population
+
+def run_genetic_algorithm(include_individuals=None, initial_population=INITIAL_POPULATION, num_of_generations=NUM_OF_GENERATIONS):
+    if include_individuals:
+        # Reduce the number of new individuals to generate
+        new_individuals_count = initial_population - len(include_individuals)
+        population = toolbox.population(n=new_individuals_count)
+        # Prepend or append top individuals from the previous run
+        population.extend(include_individuals)
+    else:
+        population = toolbox.population(n=initial_population)
 
     # Evaluate the entire population
     fitnesses = list(map(toolbox.evaluate, population))
@@ -112,8 +112,36 @@ def main():
 
     # After the GA run, select and print the 5 best individuals
     best_individuals = tools.selBest(population, k=5)
-    for i, individual in enumerate(best_individuals, start=1):
-        print(f"Best Individual {i}: {individual}, Fitness: {individual.fitness.values[0]}")
+
+    # Select and return the top 5 individuals
+    return tools.selBest(population, k=5)
+
+def interactive_ga_run():
+    top_individuals = None
+
+    while True:
+        if top_individuals:
+            print("Rerunning GA with top individuals from previous run...")
+        else:
+            print("Running GA for the first time...")
+
+        top_individuals = run_genetic_algorithm(include_individuals=top_individuals)
+
+        # Display the top individuals
+
+        print("Top individuals from the current run:")
+        for i, individual in enumerate(top_individuals, start=1):
+            print(f"Best Individual {i}: {individual}, Fitness: {individual.fitness.values[0]}")
+
+        # Ask the user if they want to rerun
+        rerun = input("Do you want to rerun the GA with these top individuals? (yes/no): ").lower()
+        if rerun != "yes":
+            print("GA run complete. Final top individuals shown above.")
+            break
+
+# Example genetic algorithm loop
+def main():
+    interactive_ga_run()
 
 if __name__ == "__main__":
     main()
