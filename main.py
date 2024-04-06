@@ -1,150 +1,65 @@
-import random
-from deap import base, creator, tools
+import employee as e
+import data as d
 
-# Global variables
-CHROMOSOME_LENGHT = 31
-INITIAL_POPULATION = 5000
-NUM_OF_GENERATIONS = 300
-CROSSOVER_PROBABILITY = 0.5
-MUTATION_PROBABILITY = 0.2
+current_schedule = d.schedule
+current_employees = d.employees
 
-restricted_positions = {
-    1: [12, 13, 14, 15, 26, 27, 28, 29, 30],
-    2: [6, 7, 8, 9, 26, 27, 28, 29],
-    3: [0, 1, 2, 3, 4, 5, 6, 18, 19, 20, 21, 26, 27, 28, 29],
-    4: [15, 16, 17, 18, 19, 20],
-    5: [1, 2, 3, 4, 5, 6, 20, 21, 22, 23, 24, 25, 26, 27]
-}
+def calculate_lenght_of_shift(shift):
+    return len(shift)
 
-creator.create("FitnessMax", base.Fitness, weights=(1.0,))
-creator.create("Individual", list, fitness=creator.FitnessMax)
-toolbox = base.Toolbox()
-
-# Attribute generator: generates numbers from 0 to 5 for each gene in the chromosome
-toolbox.register("attr_int", random.randint, 1, 5)
-# Structure initializer: creates an individual consisting of 120 such genes
-toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_int, CHROMOSOME_LENGHT)
-# Population initializer
-toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+def process_employees(employees):
+    employee_list = [
+        e.Employee(
+            name=name,
+            index=index + 1,
+            min_shift_lenght=info.get('min_shift_len', 0),
+            max_shift_lenght=info.get('max_shift_len', 16),
+            personal_calendar=info.get('calendar', None),
+        )
+        for index, (name, info) in enumerate(employees.items())
+    ]
+    return employee_list
 
 
-def evaluate(individual):
-    current_score = 0
-    total_score = 0
-    prev_value = None
-    penalty = 0  # Initialize penalty for placing numbers in restricted positions
+def process_employee_shift_unavailabilities(employees, schedule):
+    employee_shift_unavailabilities = {}
 
-    for index, value in enumerate(individual):
-        # Check if the current value is placed in a restricted position
-        if index in restricted_positions.get(value, []):
-            penalty += 1  # Increase penalty for restricted placement
+    for day, shifts in schedule.items():
+        # Ensure there's an entry for the day
+        if day not in employee_shift_unavailabilities:
+            employee_shift_unavailabilities[day] = {}
 
-        if value == prev_value:
-            # If the current value is the same as the previous, increment the score
-            current_score += 1
-        else:
-            # Add the current_score to total_score whenever a sequence ends
-            total_score += current_score
-            current_score = 0  # Reset score for the new value
-        prev_value = value
+        for shift_num, shift_hours in shifts.items():
+            # Prepare a list of the shift hours to calculate indexes
+            sorted_shift_hours = sorted([int(hour) for hour in shift_hours.keys()])
+            shift_start = sorted_shift_hours[0]
 
-    # Add the last sequence score to total_score
-    total_score += current_score
+            # Initialize storage for this shift's unavailability
+            shift_unavailabilities = {}
 
-    # Adjust the total score by the penalty. Ensure the final score is not negative
-    final_score = max(0, total_score - penalty)
+            for employee in employees:
+                # Check if there's a matching day in the employee's calendar
+                emp_day_schedule = employee.personal_calendar.get(day, {})
 
-    return (final_score,)
+                # Collect indexes of busy hours within this shift
+                busy_hour_indexes = [sorted_shift_hours.index(int(hour)) for hour, status in emp_day_schedule.items() if
+                                     status == "Busy" and int(hour) in sorted_shift_hours]
 
+                if busy_hour_indexes:
+                    # Record the employee's unavailable indexes for this shift
+                    shift_unavailabilities[employee.index] = busy_hour_indexes
 
-# Register the evaluation function
-toolbox.register("evaluate", evaluate)
+            # If there are any unavailabilities found, add them under the current shift
+            if shift_unavailabilities:
+                employee_shift_unavailabilities[day][shift_num] = shift_unavailabilities
 
-# Register genetic operators
-toolbox.register("select", tools.selTournament, tournsize=3)
-toolbox.register("mate", tools.cxOnePoint)  # For one-point crossover
-toolbox.register("mate", tools.cxTwoPoint)  # For two-point crossover
-toolbox.register("mate", tools.cxUniform, indpb=0.1)  # For uniform crossover, with a swapping probability of 10%
-
-toolbox.register("mutate", tools.mutUniformInt, low=1, up=5, indpb=0.05)
+    return employee_shift_unavailabilities
 
 
-def run_genetic_algorithm(include_individuals=None, initial_population=INITIAL_POPULATION, num_of_generations=NUM_OF_GENERATIONS):
-    if include_individuals:
-        # Reduce the number of new individuals to generate
-        new_individuals_count = initial_population - len(include_individuals)
-        population = toolbox.population(n=new_individuals_count)
-        # Prepend or append top individuals from the previous run
-        population.extend(include_individuals)
-    else:
-        population = toolbox.population(n=initial_population)
+print(process_employee_shift_unavailabilities(process_employees(current_employees), current_schedule))
 
-    # Evaluate the entire population
-    fitnesses = list(map(toolbox.evaluate, population))
-    for ind, fit in zip(population, fitnesses):
-        ind.fitness.values = fit
 
-    for g in range(NUM_OF_GENERATIONS):
-        # Select the next generation individuals
-        offspring = toolbox.select(population, len(population))
-        # Clone the selected individuals
-        offspring = list(map(toolbox.clone, offspring))
 
-        # Apply crossover and mutation on the offspring
-        for child1, child2 in zip(offspring[::2], offspring[1::2]):
-            if random.random() < CROSSOVER_PROBABILITY:  # Check if we should perform crossover
-                toolbox.mate(child1, child2)  # Apply the registered crossover operation
-                del child1.fitness.values
-                del child2.fitness.values
-
-        for mutant in offspring:
-            if random.random() < MUTATION_PROBABILITY:
-                toolbox.mutate(mutant)
-                del mutant.fitness.values
-
-        # Evaluate the individuals with an invalid fitness
-        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        fitnesses = map(toolbox.evaluate, invalid_ind)
-        for ind, fit in zip(invalid_ind, fitnesses):
-            ind.fitness.values = fit
-
-        population[:] = offspring
-
-    # After the GA run, select and print the 5 best individuals
-    best_individuals = tools.selBest(population, k=5)
-
-    # Select and return the top 5 individuals
-    return tools.selBest(population, k=5)
-
-def interactive_ga_run():
-    top_individuals = None
-
-    while True:
-        if top_individuals:
-            print("Rerunning GA with top individuals from previous run...")
-        else:
-            print("Running GA for the first time...")
-
-        top_individuals = run_genetic_algorithm(include_individuals=top_individuals)
-
-        # Display the top individuals
-
-        print("Top individuals from the current run:")
-        for i, individual in enumerate(top_individuals, start=1):
-            print(f"Best Individual {i}: {individual}, Fitness: {individual.fitness.values[0]}")
-
-        # Ask the user if they want to rerun
-        rerun = input("Do you want to rerun the GA with these top individuals? (yes/no): ").lower()
-        if rerun != "yes":
-            print("GA run complete. Final top individuals shown above.")
-            break
-
-# Example genetic algorithm loop
-def main():
-    interactive_ga_run()
-
-if __name__ == "__main__":
-    main()
 
 
 
