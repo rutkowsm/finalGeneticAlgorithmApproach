@@ -159,6 +159,7 @@ def interactive_ga_run():
             print("GA run complete. Final top individuals shown above.")
             break
 
+
 #Example genetic algorithm loop
 def main():
     interactive_ga_run()

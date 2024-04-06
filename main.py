@@ -26,14 +26,12 @@ def process_employee_shift_unavailabilities(employees, schedule):
     employee_shift_unavailabilities = {}
 
     for day, shifts in schedule.items():
-        # Ensure there's an entry for the day
-        if day not in employee_shift_unavailabilities:
-            employee_shift_unavailabilities[day] = {}
+        employee_shift_unavailabilities[day] = {}
 
         for shift_num, shift_hours in shifts.items():
-            # Prepare a list of the shift hours to calculate indexes
+            # Calculate the shift length
             sorted_shift_hours = sorted([int(hour) for hour in shift_hours.keys()])
-            shift_start = sorted_shift_hours[0]
+            shift_length = len(sorted_shift_hours)
 
             # Initialize storage for this shift's unavailability
             shift_unavailabilities = {}
@@ -50,9 +48,11 @@ def process_employee_shift_unavailabilities(employees, schedule):
                     # Record the employee's unavailable indexes for this shift
                     shift_unavailabilities[employee.index] = busy_hour_indexes
 
-            # If there are any unavailabilities found, add them under the current shift
-            if shift_unavailabilities:
-                employee_shift_unavailabilities[day][shift_num] = shift_unavailabilities
+            # Add shift length and unavailabilities for the shift
+            employee_shift_unavailabilities[day][shift_num] = {
+                "shift_len": shift_length,
+                "unavailabilities": shift_unavailabilities
+            }
 
     return employee_shift_unavailabilities
 
@@ -60,7 +60,8 @@ def process_employee_shift_unavailabilities(employees, schedule):
 # print(process_employee_shift_unavailabilities(process_employees(current_employees), current_schedule))
 
 
-
+# def execute_algorithm(adjusted_schedule):
+#     pass
 
 
 
