@@ -3,19 +3,28 @@ from deap import base, creator, tools
 from datetime import datetime
 
 # Global variables
-CHROMOSOME_LENGHT = 8
+chromosome_lenght = 8
+number_of_genes = 5
 INITIAL_POPULATION = 3000
 NUM_OF_GENERATIONS = 200
 CROSSOVER_PROBABILITY = 0.5
 MUTATION_PROBABILITY = 0.2
-NUMBER_OF_GENES = 5
+
+
+# restricted_positions = {
+#     1: [2, 3, 4],
+#     2: [0, 7],
+#     3: [3, 4, 5, 6],
+#     4: [0, 1, 2, 3, 4, 5, 6, 7],
+#     5: [0, 1, 2, 3]
+# }
 
 restricted_positions = {
-    1: [2, 3, 4],
-    2: [0, 7],
-    3: [4, 5, 6],
+    1: [0, 1, 2, 3, 4, 5, 6, 7],
+    2: [0, 1, 2, 3, 4, 5, 6, 7],
+    3: [0, 1, 2, 3, 4, 5, 6, 7],
     4: [0, 1, 2, 3, 4, 5, 6, 7],
-    5: [0, 1, 2, 3]
+    5: [0, 1, 2]
 }
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
@@ -23,9 +32,9 @@ creator.create("Individual", list, fitness=creator.FitnessMax)
 toolbox = base.Toolbox()
 
 # Attribute generator: generates numbers from 0 to 5 for each gene in the chromosome
-toolbox.register("attr_int", random.randint, 1, NUMBER_OF_GENES)
+toolbox.register("attr_int", random.randint, 0, number_of_genes)
 # Structure initializer: creates an individual consisting of 120 such genes
-toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_int, CHROMOSOME_LENGHT)
+toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_int, chromosome_lenght)
 # Population initializer
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
@@ -39,7 +48,11 @@ def evaluate(individual):
     for index, value in enumerate(individual):
         # Check if the current value is placed in a restricted position
         if index in restricted_positions.get(value, []):
-            penalty += 1  # Increase penalty for restricted placement
+            penalty += 2  # Increase penalty for restricted placement
+
+        # Check if the block is left empty and apply penalty
+        if value == 0:
+            penalty += 1
 
         if value == prev_value:
             # If the current value is the same as the previous, increment the score
@@ -146,12 +159,12 @@ def interactive_ga_run():
             print("GA run complete. Final top individuals shown above.")
             break
 
-# Example genetic algorithm loop
-# def main():
-#     interactive_ga_run()
-#
-# if __name__ == "__main__":
-#     main()
+#Example genetic algorithm loop
+def main():
+    interactive_ga_run()
+
+if __name__ == "__main__":
+    main()
 
 
 
