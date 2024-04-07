@@ -1,12 +1,9 @@
 import employee as e
-import data as d
-import genetic_algorithm as ga
 
-current_schedule = d.schedule
-current_employees = d.employees
 
 def calculate_lenght_of_shift(shift):
     return len(shift)
+
 
 def process_employees(employees):
     employee_list = [
@@ -55,14 +52,3 @@ def process_employee_shift_unavailabilities(employees, schedule):
             }
 
     return employee_shift_unavailabilities
-
-
-# print(process_employee_shift_unavailabilities(process_employees(current_employees), current_schedule))
-
-
-# def execute_algorithm(adjusted_schedule):
-#     pass
-
-
-
-
