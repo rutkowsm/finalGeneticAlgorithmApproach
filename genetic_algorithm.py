@@ -3,6 +3,7 @@ from deap import base, creator, tools
 from datetime import datetime
 import data as d
 import calendar_processing as cp
+from copy import deepcopy
 
 # Global variables
 INITIAL_POPULATION = 2000
@@ -152,21 +153,44 @@ def interactive_ga_run(chromosome_lenght, gene_count, unavailabilities):
             # print("GA run complete. Final top individuals shown above.")
             break
 
+    return top_individuals
 
-def run_ga_iterations(schedule):
+
+def run_ga_iterations(schedule, employees):
+    """
+    Add your function description here.
+    """
     start_ts = datetime.now()
     print(f"Start: {start_ts}")
 
-    num_of_employees = len(cp.process_employees(d.employees))
-    for date, shifts in schedule.items():
-        for shift_num, details in shifts.items():
-            shift_len = details.get("shift_len", "N/A")  # Default to "N/A" if not found
-            unavailabilities = details.get("unavailabilities", {})
-            print(f"'{date}' Shift {shift_num}: length: {shift_len}, unavailabilities: {unavailabilities}")
-            interactive_ga_run(chromosome_lenght=shift_len, gene_count=num_of_employees,
-                               unavailabilities=unavailabilities)
+    schedule_copy = deepcopy(schedule)  # Copy to avoid mutating the original schedule
 
-            # cp.update_employee_unavailabilities(current_employees, date, shift_hours, best_individual)
+    for date, shifts in schedule_copy.items():
+        for shift_num, shift_hours in shifts.items():
+            # Process current shift unavailabilities
+            shift_details = cp.process_shift_unavailabilities(employees, date, shift_num, list(shift_hours.keys()))
+            shift_len = shift_details["shift_len"]
+            unavailabilities = shift_details["unavailabilities"]
+            print(f"'{date}' Shift {shift_num}: length: {shift_len}, unavailabilities: {unavailabilities}")
+
+            # Run the genetic algorithm for the shift
+            best_individual = interactive_ga_run(chromosome_lenght=shift_len, gene_count=len(employees),
+                                                 unavailabilities=unavailabilities)
+            if best_individual is None:
+                print(f"No best individual found for shift {shift_num} on {date}.")
+                continue  # Skip to the next shift if no best individual was found
+
+            # Update employee calendars based on GA results
+            # More flexible: Flatten the list if it's a list of lists, otherwise leave it as is
+            employee_indexes = [item for sublist in best_individual for item in sublist] if any(
+                isinstance(el, list) for el in best_individual) else best_individual
+
+            cp.update_employee_calendar(date, list(shift_hours.keys()), employee_indexes, employees)
+            print(f"Shift hours: {shift_hours}")
+
+            for emp in employees:
+                print(f"Employee: {emp.name}, Calendar: {emp.personal_calendar}")
+
 
     end_ts = datetime.now()
     print(f"End: {end_ts}")
@@ -178,8 +202,7 @@ def run_ga_iterations(schedule):
 current_employees = cp.process_employees(d.employees)
 current_schedule = d.schedule
 
-adjusted_schedule = cp.process_employee_shift_unavailabilities(current_employees, d.schedule)
-run_ga_iterations(adjusted_schedule)
+run_ga_iterations(schedule=current_schedule, employees=current_employees)
 
 # def main():
 #     positions = {

@@ -1,3 +1,4 @@
+import data
 import employee as e
 
 
@@ -19,54 +20,71 @@ def process_employees(employees):
     return employee_list
 
 
-def process_employee_shift_unavailabilities(employees, schedule):
-    employee_shift_unavailabilities = {}
-
-    for day, shifts in schedule.items():
-        employee_shift_unavailabilities[day] = {}
-
-        for shift_num, shift_hours in shifts.items():
-            # Calculate the shift length
-            sorted_shift_hours = sorted([int(hour) for hour in shift_hours.keys()])
-            shift_length = len(sorted_shift_hours)
-
-            # Initialize storage for this shift's unavailability
-            shift_unavailabilities = {}
-
-            for employee in employees:
-                # Check if there's a matching day in the employee's calendar
-                emp_day_schedule = employee.personal_calendar.get(day, {})
-
-                # Collect indexes of busy hours within this shift
-                busy_hour_indexes = [sorted_shift_hours.index(int(hour)) for hour, status in emp_day_schedule.items() if
-                                     status == "Busy" and int(hour) in sorted_shift_hours]
-
-                if busy_hour_indexes:
-                    # Record the employee's unavailable indexes for this shift
-                    shift_unavailabilities[employee.index] = busy_hour_indexes
-
-            # Add shift length and unavailabilities for the shift
-            employee_shift_unavailabilities[day][shift_num] = {
-                "shift_len": shift_length,
-                "unavailabilities": shift_unavailabilities
-            }
-
-    return employee_shift_unavailabilities
-
-
-def update_employee_unavailabilities(employees, date, shift_hours, best_individual):
+def process_shift_unavailabilities(employees, day, shift_num, shift_hours):
     """
-    Update the unavailability of employees based on their assignment to a shift.
+    Process unavailabilities for a single shift.
 
     Args:
-        employees (list of Employee): The list of employee objects.
-        date (str): The date of the shift.
-        shift_hours (list of int): The hours of the shift.
-        best_individual (list of int): The indexes of employees assigned to the shift.
+        employees (list): List of Employee instances.
+        day (str): The day of the shift.
+        shift_num (int): The shift number.
+        shift_hours (dict): The shift hours.
+
+    Returns:
+        dict: Unavailabilities for the given shift.
     """
-    for employee_index in best_individual:
+    # Initialize storage for this shift's unavailability
+    shift_unavailabilities = {}
+
+    # Calculate the shift length
+    sorted_shift_hours = sorted(shift_hours)
+    shift_length = len(sorted_shift_hours)
+
+    for employee in employees:
+        # Check if there's a matching day in the employee's calendar
+        emp_day_schedule = employee.personal_calendar.get(day, {})
+
+        # Collect indexes of busy hours within this shift
+        busy_hour_indexes = [sorted_shift_hours.index(hour) for hour, status in emp_day_schedule.items()
+                             if hour in sorted_shift_hours and status != "Empty"]
+
+        if busy_hour_indexes:
+            # Record the employee's unavailable indexes for this shift
+            shift_unavailabilities[employee.index] = busy_hour_indexes
+
+    return {
+        "shift_len": shift_length,
+        "unavailabilities": shift_unavailabilities
+    }
+
+
+def update_employee_calendar(date, shift_hours, best_individual, employees):
+    """
+    Correctly update the personal calendar of each employee assigned to a shift,
+    marking them as busy for the hours of that shift.
+
+    Args:
+        date (str): The day of the shift.
+        shift_hours (list): List of integers representing the hours of the shift.
+        best_individual (list of int): List of employee indexes (adjusted for zero-based indexing) assigned to the shift.
+        employees (list of Employee): List of Employee instances.
+    """
+    for employee_index in best_individual:  # Assuming these are already adjusted for zero-based indexing
+        # Find the employee by index
         employee = next((e for e in employees if e.index == employee_index), None)
         if employee:
-            start_hour = min(shift_hours)
-            end_hour = max(shift_hours) + 1  # Assuming inclusive start, exclusive end
-            employee.add_unavailability(date, start_hour, end_hour)
+            # Ensure the day exists in the employee's personal calendar
+            if date not in employee.personal_calendar:
+                employee.personal_calendar[date] = {}
+            for hour in shift_hours:
+                # Mark each hour of the shift as "Busy"
+                employee.personal_calendar[date][hour] = "Work"
+
+# new_employees = process_employees(data.employees)
+# employee = new_employees[1]  # The employee supposedly corresponding to index 2
+# print(f"B update: {employee.personal_calendar}")
+# employee.personal_calendar["2024-04-05"] = {10: "Busy", 11: "Busy"}
+# unavailabilities = process_shift_unavailabilities(new_employees, "2024-04-05", shift_num=2, shift_hours=[12, 13, 14])
+# print(f"A update: {employee.personal_calendar}")
+# print(f"Unavailabilities: {unavailabilities}")
+
