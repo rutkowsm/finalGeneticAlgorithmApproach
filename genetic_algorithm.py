@@ -156,23 +156,6 @@ def interactive_ga_run(chromosome_lenght, gene_count, unavailabilities):
     return top_individuals
 
 
-def print_employee_calendars(employees):
-    print("##########")
-    for emp in employees:
-        print(f"\nEmployee: {emp.name}, Calendar: {{")
-
-        for day in sorted(emp.personal_calendar.keys()):
-            print(f"\t'{day}': {{", end=" ")
-            # Sort the hours for each day before printing
-            hours_sorted = sorted(emp.personal_calendar[day].items(), key=lambda x: int(x[0]))
-            shift_items = [f"{hour}: '{status}'" for hour, status in hours_sorted]
-            print(", ".join(shift_items) + " }},")
-
-        print("}")
-    print("##########")
-
-
-
 def run_ga_iterations(schedule, employees):
     """
     Add your function description here.
@@ -181,6 +164,8 @@ def run_ga_iterations(schedule, employees):
     print(f"Start: {start_ts}")
 
     schedule_copy = deepcopy(schedule)  # Copy to avoid mutating the original schedule
+
+    cp.print_full_schedule(schedule_copy)
 
     for date, shifts in schedule_copy.items():
         for shift_num, shift_hours in shifts.items():
@@ -204,17 +189,18 @@ def run_ga_iterations(schedule, employees):
             employee_indexes = [item for sublist in best_individual for item in sublist] if any(
                 isinstance(el, list) for el in best_individual) else best_individual
 
-
-            cp.update_employee_calendar(date=date, shift_hours=list(shift_hours.keys()), best_individual=employee_indexes, employees=employees)
+            cp.update_employee_calendar(date=date, shift_hours=list(shift_hours.keys()),
+                                        best_individual=employee_indexes, employees=employees)
             # Assuming the variables date, shift_num, best_individual, employees, and schedule_copy are defined and available
-            cp.update_schedule_with_names(date=date, shift_num=shift_num, best_individual=employee_indexes, employees=employees, schedule=schedule_copy)
+            cp.update_schedule_with_names(date=date, shift_num=shift_num, best_individual=employee_indexes,
+                                          employees=employees, schedule=schedule_copy)
 
             print(f"Shift hours: {shift_hours}")
             print("    ")
 
-            print_employee_calendars(employees)
+            cp.print_employee_calendars(employees)
 
-
+    cp.print_full_schedule(schedule_copy)
 
     end_ts = datetime.now()
     print(f"End: {end_ts}")

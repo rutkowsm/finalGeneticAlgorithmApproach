@@ -93,3 +93,29 @@ def update_schedule_with_names(date, shift_num, best_individual, employees, sche
 
     # Now, schedule_copy is updated in-place; no need to return it explicitly
 
+
+def print_employee_calendars(employees):
+    print("##########")
+    for emp in employees:
+        print(f"\nEmployee: {emp.name}, Calendar: {{")
+
+        for day in sorted(emp.personal_calendar.keys()):
+            print(f"\t'{day}': {{", end=" ")
+            # Sort the hours for each day before printing
+            hours_sorted = sorted(emp.personal_calendar[day].items(), key=lambda x: int(x[0]))
+            shift_items = [f"{hour}: '{status}'" for hour, status in hours_sorted]
+            print(", ".join(shift_items) + " }},")
+
+        print("}")
+    print("##########")
+
+
+def print_full_schedule(schedule):
+    print("Full Schedule:")
+    print("==============")
+    for date, shifts in sorted(schedule.items()):
+        print(f"\nDate: {date}")
+        for shift_num, shift_hours in sorted(shifts.items()):
+            print(f"  Shift {shift_num}:")
+            for hour, assignment in sorted(shift_hours.items(), key=lambda x: int(x[0])):
+                print(f"    {hour}:00 - {assignment}")
