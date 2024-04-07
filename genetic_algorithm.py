@@ -156,6 +156,22 @@ def interactive_ga_run(chromosome_lenght, gene_count, unavailabilities):
     return top_individuals
 
 
+def print_employee_calendars(employees):
+    print("##########")
+    for emp in employees:
+        print(f"\nEmployee: {emp.name}, Calendar: {{")
+
+        for day in sorted(emp.personal_calendar.keys()):
+            print(f"\t'{day}': {{", end=" ")
+            # Sort the hours for each day before printing
+            hours_sorted = sorted(emp.personal_calendar[day].items(), key=lambda x: int(x[0]))
+            shift_items = [f"{hour}: '{status}'" for hour, status in hours_sorted]
+            print(", ".join(shift_items) + " }},")
+
+        print("}")
+    print("##########")
+
+
 def run_ga_iterations(schedule, employees):
     """
     Add your function description here.
@@ -171,7 +187,9 @@ def run_ga_iterations(schedule, employees):
             shift_details = cp.process_shift_unavailabilities(employees, date, shift_num, list(shift_hours.keys()))
             shift_len = shift_details["shift_len"]
             unavailabilities = shift_details["unavailabilities"]
-            print(f"'{date}' Shift {shift_num}: length: {shift_len}, unavailabilities: {unavailabilities}")
+            print('   ')
+            print(f"NEW SHIFT: '{date}' Shift {shift_num}: length: {shift_len}")
+            print(f"Unavailabilities: {unavailabilities}")
 
             # Run the genetic algorithm for the shift
             best_individual = interactive_ga_run(chromosome_lenght=shift_len, gene_count=len(employees),
@@ -185,11 +203,12 @@ def run_ga_iterations(schedule, employees):
             employee_indexes = [item for sublist in best_individual for item in sublist] if any(
                 isinstance(el, list) for el in best_individual) else best_individual
 
+
             cp.update_employee_calendar(date, list(shift_hours.keys()), employee_indexes, employees)
             print(f"Shift hours: {shift_hours}")
+            print("    ")
 
-            for emp in employees:
-                print(f"Employee: {emp.name}, Calendar: {emp.personal_calendar}")
+            print_employee_calendars(employees)
 
 
     end_ts = datetime.now()

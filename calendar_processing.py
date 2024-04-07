@@ -80,11 +80,14 @@ def update_employee_calendar(date, shift_hours, best_individual, employees):
                 # Mark each hour of the shift as "Busy"
                 employee.personal_calendar[date][hour] = "Work"
 
-# new_employees = process_employees(data.employees)
-# employee = new_employees[1]  # The employee supposedly corresponding to index 2
-# print(f"B update: {employee.personal_calendar}")
-# employee.personal_calendar["2024-04-05"] = {10: "Busy", 11: "Busy"}
-# unavailabilities = process_shift_unavailabilities(new_employees, "2024-04-05", shift_num=2, shift_hours=[12, 13, 14])
-# print(f"A update: {employee.personal_calendar}")
-# print(f"Unavailabilities: {unavailabilities}")
+
+def update_shift_with_employee_names(schedule, date, shift_num, employee_indexes, index_to_employee_name):
+    shift_hours = schedule[date][shift_num]
+
+    for i, hour in enumerate(sorted(shift_hours.keys())):
+        employee_index = employee_indexes[i]  # Now directly using the integer index
+        employee_name = index_to_employee_name[employee_index]
+        shift_hours[hour] = employee_name
+
+
 
