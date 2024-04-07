@@ -5,11 +5,10 @@ import data as d
 import calendar_processing as cp
 
 # Global variables
-INITIAL_POPULATION = 3000
+INITIAL_POPULATION = 2000
 NUM_OF_GENERATIONS = 200
 CROSSOVER_PROBABILITY = 0.5
 MUTATION_PROBABILITY = 0.2
-
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMax)
@@ -63,7 +62,8 @@ toolbox.register("mate", tools.cxUniform, indpb=0.1)  # For uniform crossover, w
 toolbox.register("mutate", tools.mutUniformInt, low=1, up=5, indpb=0.05)
 
 
-def run_genetic_algorithm(chromosome_lenght=None, gene_count=None, restricted_positions=None, include_individuals=None, initial_population=INITIAL_POPULATION,
+def run_genetic_algorithm(chromosome_lenght=None, gene_count=None, restricted_positions=None, include_individuals=None,
+                          initial_population=INITIAL_POPULATION,
                           num_of_generations=NUM_OF_GENERATIONS):
     # Attribute generator: generates numbers from 0 to gene_count for each gene in the chromosome
     toolbox.register("attr_int", random.randint, 0, gene_count)
@@ -132,7 +132,8 @@ def interactive_ga_run(chromosome_lenght, gene_count, unavailabilities):
         # else:
         #     print("Running GA for the first time...")
 
-        top_individuals = run_genetic_algorithm(restricted_positions=unavailabilities,include_individuals=top_individuals,
+        top_individuals = run_genetic_algorithm(restricted_positions=unavailabilities,
+                                                include_individuals=top_individuals,
                                                 chromosome_lenght=chromosome_lenght, gene_count=gene_count)
         # end_ts = datetime.now()
         # print(f"End: {end_ts}")
@@ -156,13 +157,16 @@ def run_ga_iterations(schedule):
     start_ts = datetime.now()
     print(f"Start: {start_ts}")
 
-    num_of_employees=len(cp.process_employees(d.employees))
+    num_of_employees = len(cp.process_employees(d.employees))
     for date, shifts in schedule.items():
         for shift_num, details in shifts.items():
             shift_len = details.get("shift_len", "N/A")  # Default to "N/A" if not found
             unavailabilities = details.get("unavailabilities", {})
             print(f"'{date}' Shift {shift_num}: length: {shift_len}, unavailabilities: {unavailabilities}")
-            interactive_ga_run(chromosome_lenght=shift_len, gene_count=num_of_employees, unavailabilities=unavailabilities)
+            interactive_ga_run(chromosome_lenght=shift_len, gene_count=num_of_employees,
+                               unavailabilities=unavailabilities)
+
+            # cp.update_employee_unavailabilities(current_employees, date, shift_hours, best_individual)
 
     end_ts = datetime.now()
     print(f"End: {end_ts}")
@@ -170,7 +174,12 @@ def run_ga_iterations(schedule):
     time_diff = end_ts - start_ts
     print(f"Total time: {time_diff}")
 
-run_ga_iterations(d.adjusted_schedule)
+
+current_employees = cp.process_employees(d.employees)
+current_schedule = d.schedule
+
+adjusted_schedule = cp.process_employee_shift_unavailabilities(current_employees, d.schedule)
+run_ga_iterations(adjusted_schedule)
 
 # def main():
 #     positions = {

@@ -8,3 +8,9 @@ class Employee:
         self.min_weekly_hours = min_weekly_hours
         self.max_weekly_hours = max_weekly_hours
         self.personal_calendar = personal_calendar
+
+    def add_unavailability(self, day, start_hour, end_hour):
+        if day not in self.personal_calendar:
+            self.personal_calendar[day] = {}
+        for hour in range(start_hour, end_hour):
+            self.personal_calendar[day][hour] = "Busy"

@@ -52,3 +52,21 @@ def process_employee_shift_unavailabilities(employees, schedule):
             }
 
     return employee_shift_unavailabilities
+
+
+def update_employee_unavailabilities(employees, date, shift_hours, best_individual):
+    """
+    Update the unavailability of employees based on their assignment to a shift.
+
+    Args:
+        employees (list of Employee): The list of employee objects.
+        date (str): The date of the shift.
+        shift_hours (list of int): The hours of the shift.
+        best_individual (list of int): The indexes of employees assigned to the shift.
+    """
+    for employee_index in best_individual:
+        employee = next((e for e in employees if e.index == employee_index), None)
+        if employee:
+            start_hour = min(shift_hours)
+            end_hour = max(shift_hours) + 1  # Assuming inclusive start, exclusive end
+            employee.add_unavailability(date, start_hour, end_hour)
