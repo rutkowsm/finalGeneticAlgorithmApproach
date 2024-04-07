@@ -172,6 +172,7 @@ def print_employee_calendars(employees):
     print("##########")
 
 
+
 def run_ga_iterations(schedule, employees):
     """
     Add your function description here.
@@ -205,10 +206,14 @@ def run_ga_iterations(schedule, employees):
 
 
             cp.update_employee_calendar(date=date, shift_hours=list(shift_hours.keys()), best_individual=employee_indexes, employees=employees)
+            # Assuming the variables date, shift_num, best_individual, employees, and schedule_copy are defined and available
+            cp.update_schedule_with_names(date=date, shift_num=shift_num, best_individual=employee_indexes, employees=employees, schedule=schedule_copy)
+
             print(f"Shift hours: {shift_hours}")
             print("    ")
 
             print_employee_calendars(employees)
+
 
 
     end_ts = datetime.now()

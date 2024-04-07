@@ -77,10 +77,19 @@ def update_employee_calendar(employees, date, shift_hours, best_individual):
                 employee.personal_calendar[date][hour] = "Work"
 
 
-def update_shift_with_employee_names(schedule, date, shift_num, employee_indexes, index_to_employee_name):
+def update_schedule_with_names(date, shift_num, best_individual, employees, schedule):
+    # Assuming each employee in 'employees' list has an 'index' and 'name' attribute
+    index_to_name = {emp.index: emp.name for emp in employees}  # Create an index-to-name mapping
+
+    # Retrieve shift hours for the current shift
     shift_hours = schedule[date][shift_num]
 
-    for i, hour in enumerate(sorted(shift_hours.keys())):
-        employee_index = employee_indexes[i]  # Now directly using the integer index
-        employee_name = index_to_employee_name[employee_index]
-        shift_hours[hour] = employee_name
+    # Update shift_hours with employee names instead of "Empty" or any placeholder
+    for hour_index, employee_index in enumerate(best_individual):
+        # Assuming shift_hours is a list of hour keys (e.g., [10, 11, 12, ...])
+        hour = list(shift_hours.keys())[hour_index]
+        employee_name = index_to_name.get(employee_index, "Unknown")  # Safely get the employee name
+        shift_hours[hour] = employee_name  # Update the schedule
+
+    # Now, schedule_copy is updated in-place; no need to return it explicitly
+
