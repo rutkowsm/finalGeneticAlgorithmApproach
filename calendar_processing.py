@@ -58,26 +58,22 @@ def process_shift_unavailabilities(employees, day, shift_num, shift_hours):
     }
 
 
-def update_employee_calendar(date, shift_hours, best_individual, employees):
-    """
-    Correctly update the personal calendar of each employee assigned to a shift,
-    marking them as busy for the hours of that shift.
+def update_employee_calendar(employees, date, shift_hours, best_individual):
+    # Maps each employee index to the hours they work
+    employee_assignments = dict()
 
-    Args:
-        date (str): The day of the shift.
-        shift_hours (list): List of integers representing the hours of the shift.
-        best_individual (list of int): List of employee indexes (adjusted for zero-based indexing) assigned to the shift.
-        employees (list of Employee): List of Employee instances.
-    """
-    for employee_index in best_individual:  # Assuming these are already adjusted for zero-based indexing
-        # Find the employee by index
-        employee = next((e for e in employees if e.index == employee_index), None)
+    for hour, employee_index in zip(shift_hours, best_individual):
+        if employee_index not in employee_assignments:
+            employee_assignments[employee_index] = []
+        employee_assignments[employee_index].append(hour)
+
+    for employee_index, hours in employee_assignments.items():
+        # Find the corresponding employee by their index
+        employee = next((emp for emp in employees if emp.index == employee_index), None)
         if employee:
-            # Ensure the day exists in the employee's personal calendar
-            if date not in employee.personal_calendar:
-                employee.personal_calendar[date] = {}
-            for hour in shift_hours:
-                # Mark each hour of the shift as "Busy"
+            for hour in hours:
+                if date not in employee.personal_calendar:
+                    employee.personal_calendar[date] = {}
                 employee.personal_calendar[date][hour] = "Work"
 
 
@@ -88,6 +84,3 @@ def update_shift_with_employee_names(schedule, date, shift_num, employee_indexes
         employee_index = employee_indexes[i]  # Now directly using the integer index
         employee_name = index_to_employee_name[employee_index]
         shift_hours[hour] = employee_name
-
-
-

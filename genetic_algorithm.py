@@ -204,7 +204,7 @@ def run_ga_iterations(schedule, employees):
                 isinstance(el, list) for el in best_individual) else best_individual
 
 
-            cp.update_employee_calendar(date, list(shift_hours.keys()), employee_indexes, employees)
+            cp.update_employee_calendar(date=date, shift_hours=list(shift_hours.keys()), best_individual=employee_indexes, employees=employees)
             print(f"Shift hours: {shift_hours}")
             print("    ")
 
